@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:todo_list/model/task.dart';
 
-
 class TodoListScreen extends StatefulWidget {
   @override
   _TodoListScreenState createState() => _TodoListScreenState();
@@ -14,6 +13,13 @@ class _TodoListScreenState extends State<TodoListScreen> {
     Task(title: 'Task 3'),
   ];
   final TextEditingController _controller = TextEditingController();
+
+  void _addTask(String title) {
+    setState(() {
+      _tasks.add(Task(title: title));
+    });
+    _controller.clear();
+  }
 
   void _toggleTaskCompletion(int index) {
     setState(() {
@@ -38,7 +44,24 @@ class _TodoListScreenState extends State<TodoListScreen> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
-              children: [],
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: InputDecoration(
+                      labelText: 'New Task',
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.add),
+                  onPressed: () {
+                    if (_controller.text.isNotEmpty) {
+                      _addTask(_controller.text);
+                    }
+                  },
+                ),
+              ],
             ),
           ),
           Expanded(
