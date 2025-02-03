@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:todo_list/model/task.dart';
+import 'package:todo_list/widgets/task_card.dart';
 
 class TodoListScreen extends StatefulWidget {
   @override
@@ -65,37 +66,15 @@ class _TodoListScreenState extends State<TodoListScreen> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
+            child:
+            ListView.builder(
               itemCount: _tasks.length,
               itemBuilder: (context, index) {
                 final task = _tasks[index];
-                return ListTile(
-                  title: Text(
-                    task.title,
-                    style: TextStyle(
-                      decoration: task.isCompleted
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                      color: task.isCompleted ? Colors.grey : Colors.black,
-                    ),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          task.isCompleted
-                              ? Icons.check_box
-                              : Icons.check_box_outline_blank,
-                        ),
-                        onPressed: () => _toggleTaskCompletion(index),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: () => _removeTask(index),
-                      ),
-                    ],
-                  ),
+                return TaskCard(
+                  task: task,
+                  onToggleCompletion: () => _toggleTaskCompletion(index),
+                  onDelete: () => _removeTask(index),
                 );
               },
             ),
