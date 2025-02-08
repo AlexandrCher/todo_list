@@ -9,15 +9,17 @@ class TodoListScreen extends StatefulWidget {
 
 class _TodoListScreenState extends State<TodoListScreen> {
   final List<Task> _tasks = [
-    Task(title: 'Task 1', deadline: DateTime.now().add(Duration(days: 1))),
-    Task(title: 'Task 2', deadline: DateTime.now().add(Duration(days: 2))),
-    Task(title: 'Task 3', deadline: DateTime.now().add(Duration(days: 3))),
+    Task(title: 'Task 1', deadline: DateTime.now().add(Duration(days: 1)), category: 'Work'),
+    Task(title: 'Task 2', deadline: DateTime.now().add(Duration(days: 2)), category: 'Shopping'),
+    Task(title: 'Task 3', deadline: DateTime.now().add(Duration(days: 3)), category: 'Meetings'),
   ];
   final TextEditingController _controller = TextEditingController();
+  String _selectedCategory = 'Work';
+  final List<String> _categories = ['Work', 'Shopping', 'Meetings', 'Learning'];
 
-  void _addTask(String title, DateTime deadline) {
+  void _addTask(String title, DateTime deadline, String category) {
     setState(() {
-      _tasks.add(Task(title: title, deadline: deadline));
+      _tasks.add(Task(title: title, deadline: deadline, category: category));
     });
     _controller.clear();
   }
@@ -49,15 +51,34 @@ class _TodoListScreenState extends State<TodoListScreen> {
         builder: (context) {
           return AlertDialog(
             title: Text('New Task'),
-            content: TextField(
-              controller: _controller,
-              decoration: InputDecoration(labelText: 'Task Title'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _controller,
+                  decoration: InputDecoration(labelText: 'Task Title'),
+                ),
+                DropdownButton<String>(
+                  value: _selectedCategory,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedCategory = newValue!;
+                    });
+                  },
+                  items: _categories.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+              ],
             ),
             actions: [
               TextButton(
                 onPressed: () {
                   if (_controller.text.isNotEmpty) {
-                    _addTask(_controller.text, deadline);
+                    _addTask(_controller.text, deadline, _selectedCategory);
                     Navigator.of(context).pop();
                   }
                 },
