@@ -3,10 +3,12 @@ class Task {
   bool isCompleted;
   DateTime deadline;
   DateTime? completionDate;
+  String category;
 
   Task({
     required this.title,
     required this.deadline,
+    required this.category,
     this.isCompleted = false,
     this.completionDate,
   });
