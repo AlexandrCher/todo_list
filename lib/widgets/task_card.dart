@@ -36,6 +36,10 @@ class TaskCard extends StatelessWidget {
                 : Theme.of(context).textTheme.bodyLarge,
           ),
           Text(
+            'Category: ${task.category}',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          Text(
             'Deadline: ${formatDateTime(task.deadline)}',
             style: Theme.of(context).textTheme.bodySmall,
           ),
