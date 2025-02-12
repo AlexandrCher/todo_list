@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:todo_list/helpers/format_datetime.dart';
 import 'package:todo_list/model/task.dart';
 import 'package:todo_list/widgets/task_card.dart';
 
@@ -13,21 +14,19 @@ class _TodoListScreenState extends State<TodoListScreen> {
         title: 'Task 1',
         deadline: DateTime.now().add(Duration(days: 1)),
         category: 'Work'),
-    Task(
-        title: 'Task 2',
-        deadline: DateTime.now().add(Duration(days: 2)),
-        category: 'Shopping'),
+    Task(title: 'Task 2', category: 'Shopping'),
     Task(
         title: 'Task 3',
         deadline: DateTime.now().add(Duration(days: 3)),
         category: 'Meetings'),
+    Task(title: 'Task 4', category: 'Learning'),
   ];
   final TextEditingController _controller = TextEditingController();
   String _selectedCategory = 'Work';
   final List<String> _categories = ['Work', 'Shopping', 'Meetings', 'Learning'];
   String _selectedFilterCategory = 'All';
 
-  void _addTask(String title, DateTime deadline, String category) {
+  void _addTask(String title, DateTime? deadline, String category) {
     setState(() {
       _tasks.add(Task(title: title, deadline: deadline, category: category));
     });
@@ -54,61 +53,103 @@ class _TodoListScreenState extends State<TodoListScreen> {
     return null;
   }
 
-  void _showAddTaskDialog() async {
-    final DateTime? deadline = await _selectDeadline(context);
-    if (deadline != null) {
-      showDialog(
-        context: context,
-        builder: (context) {
-          String localSelectedCategory = _selectedCategory;
-          return AlertDialog(
-            title: Text('New Task'),
-            content: SingleChildScrollView(
-              child: StatefulBuilder(
-                builder: (BuildContext context, StateSetter setState) {
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
+  void _updateTask(
+      int index, String title, DateTime? deadline, String category) {
+    setState(() {
+      _tasks[index] = Task(
+        title: title,
+        deadline: deadline,
+        category: category,
+        isCompleted: _tasks[index].isCompleted,
+        completionDate: _tasks[index].completionDate,
+      );
+    });
+  }
+
+  void _showAddTaskDialog({Task? task, int? index}) async {
+  DateTime? deadline = task?.deadline;
+  _controller.text = task?.title ?? '';
+  String localSelectedCategory = task?.category ?? _selectedCategory;
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text(task == null ? 'New Task' : 'Edit Task'),
+        content: SingleChildScrollView(
+          child: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: _controller,
+                    decoration: InputDecoration(labelText: 'Task Title'),
+                  ),
+                  DropdownButton<String>(
+                    value: localSelectedCategory,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        localSelectedCategory = newValue!;
+                      });
+                    },
+                    items: _categories
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                  Row(
                     children: [
-                      TextField(
-                        controller: _controller,
-                        decoration: InputDecoration(labelText: 'Task Title'),
-                      ),
-                      DropdownButton<String>(
-                        value: localSelectedCategory,
-                        onChanged: (String? newValue) {
+                      Text(deadline != null
+                          ? 'Deadline: ${formatDateTime(deadline!)}'
+                          : 'No Deadline'),
+                      IconButton(
+                        icon: Icon(Icons.calendar_today),
+                        onPressed: () async {
+                          DateTime? newDeadline = await _selectDeadline(context);
                           setState(() {
-                            localSelectedCategory = newValue!;
+                            deadline = newDeadline;
                           });
                         },
-                        items: _categories
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
                       ),
+                      if (deadline != null)
+                        IconButton(
+                          icon: Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() {
+                              deadline = null;
+                            });
+                          },
+                        ),
                     ],
-                  );
-                },
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  if (_controller.text.isNotEmpty) {
-                    _addTask(_controller.text, deadline, localSelectedCategory);
-                    Navigator.of(context).pop();
-                  }
-                },
-                child: Text('Add'),
-              ),
-            ],
-          );
-        },
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (_controller.text.isNotEmpty) {
+                if (task == null) {
+                  _addTask(_controller.text, deadline, localSelectedCategory);
+                } else {
+                  _updateTask(index!, _controller.text, deadline, localSelectedCategory);
+                }
+                Navigator.of(context).pop();
+              }
+            },
+            child: Text(task == null ? 'Add' : 'Update'),
+          ),
+        ],
       );
-    }
-  }
+    },
+  );
+}
 
   void _toggleTaskCompletion(int index) {
     setState(() {
@@ -125,6 +166,26 @@ class _TodoListScreenState extends State<TodoListScreen> {
     setState(() {
       _tasks.removeAt(index);
     });
+  }
+
+  void _editTask(int index) {
+    _showAddTaskDialog(task: _tasks[index], index: index);
+  }
+
+  List<Task> _getSortedTasks() {
+    List<Task> sortedTasks = List.from(_tasks);
+    sortedTasks.sort((a, b) {
+      if (a.deadline != null && b.deadline != null) {
+        return a.deadline!.compareTo(b.deadline!);
+      } else if (a.deadline != null) {
+        return -1;
+      } else if (b.deadline != null) {
+        return 1;
+      } else {
+        return a.title.compareTo(b.title);
+      }
+    });
+    return sortedTasks;
   }
 
   @override
@@ -173,15 +234,16 @@ class _TodoListScreenState extends State<TodoListScreen> {
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: _tasks.length,
+              itemCount: _getSortedTasks().length,
               itemBuilder: (context, index) {
-                final task = _tasks[index];
+                final task = _getSortedTasks()[index];
                 if (_selectedFilterCategory == 'All' ||
                     task.category == _selectedFilterCategory) {
                   return TaskCard(
                     task: task,
                     onToggleCompletion: () => _toggleTaskCompletion(index),
                     onDelete: () => _removeTask(index),
+                    onEdit: () => _editTask(index),
                   );
                 }
                 return Container();
