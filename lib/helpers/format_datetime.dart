@@ -28,3 +28,9 @@ String formatDateTime(DateTime dateTime) {
 
   return '$date $time';
 }
+
+String formatDateForChart(DateTime dateTime) {
+  final day = _zeroPad(dateTime.day);
+  final month = _zeroPad(dateTime.month);
+  return '$day.$month';
+}

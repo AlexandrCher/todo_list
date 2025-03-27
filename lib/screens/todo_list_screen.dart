@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:todo_list/helpers/format_datetime.dart';
 import 'package:todo_list/model/task.dart';
+import 'package:todo_list/screens/statistics_screen.dart';
 import 'package:todo_list/widgets/task_card.dart';
+
+import '../model/destination.dart';
 
 class TodoListScreen extends StatefulWidget {
   @override
@@ -25,6 +28,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
   String _selectedCategory = 'Work';
   final List<String> _categories = ['Work', 'Shopping', 'Meetings', 'Learning'];
   String _selectedFilterCategory = 'All';
+  int currentScreenIndex = 0;
 
   void _addTask(String title, DateTime? deadline, String category) {
     setState(() {
@@ -67,89 +71,91 @@ class _TodoListScreenState extends State<TodoListScreen> {
   }
 
   void _showAddTaskDialog({Task? task, int? index}) async {
-  DateTime? deadline = task?.deadline;
-  _controller.text = task?.title ?? '';
-  String localSelectedCategory = task?.category ?? _selectedCategory;
+    DateTime? deadline = task?.deadline;
+    _controller.text = task?.title ?? '';
+    String localSelectedCategory = task?.category ?? _selectedCategory;
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: Text(task == null ? 'New Task' : 'Edit Task'),
-        content: SingleChildScrollView(
-          child: StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: _controller,
-                    decoration: InputDecoration(labelText: 'Task Title'),
-                  ),
-                  DropdownButton<String>(
-                    value: localSelectedCategory,
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        localSelectedCategory = newValue!;
-                      });
-                    },
-                    items: _categories
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                  ),
-                  Row(
-                    children: [
-                      Text(deadline != null
-                          ? 'Deadline: ${formatDateTime(deadline!)}'
-                          : 'No Deadline'),
-                      IconButton(
-                        icon: Icon(Icons.calendar_today),
-                        onPressed: () async {
-                          DateTime? newDeadline = await _selectDeadline(context);
-                          setState(() {
-                            deadline = newDeadline;
-                          });
-                        },
-                      ),
-                      if (deadline != null)
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(task == null ? 'New Task' : 'Edit Task'),
+          content: SingleChildScrollView(
+            child: StatefulBuilder(
+              builder: (BuildContext context, StateSetter setState) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: _controller,
+                      decoration: InputDecoration(labelText: 'Task Title'),
+                    ),
+                    DropdownButton<String>(
+                      value: localSelectedCategory,
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          localSelectedCategory = newValue!;
+                        });
+                      },
+                      items: _categories
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
+                    Row(
+                      children: [
+                        Text(deadline != null
+                            ? 'Deadline: ${formatDateTime(deadline!)}'
+                            : 'No Deadline'),
                         IconButton(
-                          icon: Icon(Icons.clear),
-                          onPressed: () {
+                          icon: Icon(Icons.calendar_today),
+                          onPressed: () async {
+                            DateTime? newDeadline =
+                                await _selectDeadline(context);
                             setState(() {
-                              deadline = null;
+                              deadline = newDeadline;
                             });
                           },
                         ),
-                    ],
-                  ),
-                ],
-              );
-            },
+                        if (deadline != null)
+                          IconButton(
+                            icon: Icon(Icons.clear),
+                            onPressed: () {
+                              setState(() {
+                                deadline = null;
+                              });
+                            },
+                          ),
+                      ],
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              if (_controller.text.isNotEmpty) {
-                if (task == null) {
-                  _addTask(_controller.text, deadline, localSelectedCategory);
-                } else {
-                  _updateTask(index!, _controller.text, deadline, localSelectedCategory);
+          actions: [
+            TextButton(
+              onPressed: () {
+                if (_controller.text.isNotEmpty) {
+                  if (task == null) {
+                    _addTask(_controller.text, deadline, localSelectedCategory);
+                  } else {
+                    _updateTask(index!, _controller.text, deadline,
+                        localSelectedCategory);
+                  }
+                  Navigator.of(context).pop();
                 }
-                Navigator.of(context).pop();
-              }
-            },
-            child: Text(task == null ? 'Add' : 'Update'),
-          ),
-        ],
-      );
-    },
-  );
-}
+              },
+              child: Text(task == null ? 'Add' : 'Update'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   void _toggleTaskCompletion(int index) {
     setState(() {
@@ -188,8 +194,81 @@ class _TodoListScreenState extends State<TodoListScreen> {
     return sortedTasks;
   }
 
+  void updateCurrentPageIndex(int newIndex) {
+    setState(() {
+      currentScreenIndex = newIndex;
+    });
+  }
+
+  List<Destination> get destinations {
+    return [
+      Destination(
+        screenTitle: Text('TODO List'),
+        navLabel: 'TODO List',
+        navIcon: Icons.receipt_long_outlined,
+        navSelectedIcon: Icons.receipt_long,
+        appBarActions: [
+          IconButton(
+            onPressed: () => {},
+            icon: Icon(Icons.add),
+          ),
+        ],
+        screen: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      decoration: InputDecoration(
+                        labelText: 'New Task',
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.add),
+                    onPressed: _showAddTaskDialog,
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _getSortedTasks().length,
+                itemBuilder: (context, index) {
+                  final task = _getSortedTasks()[index];
+                  if (_selectedFilterCategory == 'All' ||
+                      task.category == _selectedFilterCategory) {
+                    return TaskCard(
+                      task: task,
+                      onToggleCompletion: () => _toggleTaskCompletion(index),
+                      onDelete: () => _removeTask(index),
+                      onEdit: () => _editTask(index),
+                    );
+                  }
+                  return Container();
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      Destination(
+        screenTitle: Text('Statistics'),
+        navLabel: 'Statistics',
+        navIcon: Icons.pie_chart_outline,
+        navSelectedIcon: Icons.pie_chart,
+        screen: StatisticsScreen(tasks: _tasks),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
+    final destination = destinations[currentScreenIndex];
+
     return Scaffold(
       appBar: AppBar(
         title: Text('TODO List'),
@@ -211,47 +290,17 @@ class _TodoListScreenState extends State<TodoListScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: InputDecoration(
-                      labelText: 'New Task',
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.add),
-                  onPressed: _showAddTaskDialog,
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _getSortedTasks().length,
-              itemBuilder: (context, index) {
-                final task = _getSortedTasks()[index];
-                if (_selectedFilterCategory == 'All' ||
-                    task.category == _selectedFilterCategory) {
-                  return TaskCard(
-                    task: task,
-                    onToggleCompletion: () => _toggleTaskCompletion(index),
-                    onDelete: () => _removeTask(index),
-                    onEdit: () => _editTask(index),
-                  );
-                }
-                return Container();
-              },
-            ),
-          ),
-        ],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: currentScreenIndex,
+        onDestinationSelected: updateCurrentPageIndex,
+        destinations: destinations
+            .map((destination) => NavigationDestination(
+                icon: Icon(destination.navIcon),
+                selectedIcon: Icon(destination.navSelectedIcon),
+                label: destination.navLabel))
+            .toList(),
       ),
+      body: destination.screen,
     );
   }
 }
