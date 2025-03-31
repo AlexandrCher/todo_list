@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:todo_list/helpers/format_datetime.dart';
 import 'package:todo_list/model/task.dart';
+import 'package:todo_list/theme/custom_colors.dart';
 
 class TaskCard extends StatelessWidget {
   final Task task;
@@ -18,8 +19,11 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final customColors = Theme.of(context).extension<CustomColors>();
     Color? completionColor;
-    if (task.isCompleted && task.completionDate != null && task.deadline != null) {
+    if (task.isCompleted &&
+        task.completionDate != null &&
+        task.deadline != null) {
       completionColor = task.completionDate!.isBefore(task.deadline!)
           ? Colors.green
           : Colors.red;
@@ -46,6 +50,7 @@ class TaskCard extends StatelessWidget {
         ],
       ),
       child: ListTile(
+        tileColor: customColors?.customBackgroundColor ?? Colors.grey,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -56,7 +61,9 @@ class TaskCard extends StatelessWidget {
                         decoration: TextDecoration.lineThrough,
                         color: Colors.grey,
                       )
-                  : Theme.of(context).textTheme.bodyLarge,
+                  : Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: customColors?.customTextColor ?? Colors.black,
+                      ),
             ),
             Text(
               'Category: ${task.category}',
@@ -78,9 +85,7 @@ class TaskCard extends StatelessWidget {
         ),
         trailing: IconButton(
           icon: Icon(
-            task.isCompleted
-                ? Icons.check_box
-                : Icons.check_box_outline_blank,
+            task.isCompleted ? Icons.check_box : Icons.check_box_outline_blank,
           ),
           onPressed: onToggleCompletion,
         ),
